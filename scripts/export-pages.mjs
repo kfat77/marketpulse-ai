@@ -43,7 +43,7 @@ const interactionScript = String.raw`<script>
   };
   const buttons = [...document.querySelectorAll('button')];
   const buttonByText = (text) => buttons.find((button) => button.textContent.trim() === text);
-  const search = document.querySelector('input[placeholder="Search assets"], input[placeholder="搜索资产"]');
+  const search = document.querySelector('input[placeholder="Search assets"], input[placeholder*="搜索资产"]');
   const assets = [...document.querySelectorAll('.asset-row, .watch-row')];
   search?.addEventListener('input', (event) => {
     const query = event.target.value.toLowerCase();
