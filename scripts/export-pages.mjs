@@ -73,6 +73,21 @@ const interactionScript = String.raw`<script>
   buttonByText('Open settings')?.addEventListener('click', () => toast('Settings panel · demo mode'));
   buttonByText('Add asset')?.addEventListener('click', () => toast('Add asset · demo mode'));
   buttonByText('View all ↗')?.addEventListener('click', () => toast('Signal stream expanded · demo mode'));
+  const lynchButton = [...document.querySelectorAll('button')].find((button) => button.textContent.includes('分析当前资产新闻'));
+  lynchButton?.addEventListener('click', async () => {
+    lynchButton.disabled = true;
+    lynchButton.textContent = '正在分析新闻…';
+    let result = document.querySelector('.lynch-result');
+    if (!result) { result = document.createElement('pre'); result.className = 'lynch-result'; lynchButton.parentElement?.appendChild(result); }
+    const heading = document.querySelector('h1')?.textContent.trim() ?? '当前资产';
+    try {
+      const response = await fetch((window.MP_LYNCH_API_BASE || location.origin) + '/api/lynch-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: heading.split(' ')[0], name: heading.slice(heading.indexOf(' ') + 1), news: [{ time: '08:42', title: 'NVIDIA discussion velocity hits 30-day high', source: 'Reddit · r/stocks' }, { time: '08:18', title: 'Retail attention broadens beyond mega-cap AI', source: 'MarketPulse RSS' }, { time: '07:56', title: 'Tesla sentiment splits as delivery debate returns', source: 'Stocktwits proxy' }] }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '分析服务暂不可用');
+      result.textContent = data.analysis || '未返回分析内容';
+    } catch (error) { result.textContent = '分析服务暂不可用：' + (error.message || '请配置服务端 DEEPSEEK_API_KEY'); }
+    finally { lynchButton.disabled = false; lynchButton.textContent = '分析当前资产新闻'; }
+  });
 
   const translations = {
     'LIVE DEMO DATA REFRESHED 2M AGO': '实时演示 · 2 分钟前更新',
