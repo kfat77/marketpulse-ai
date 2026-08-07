@@ -27,6 +27,55 @@ html = html.replaceAll(/<link[^>]+rel="modulepreload"[^>]*>/gi, "");
 html = html.replaceAll(/<link[^>]+rel="preload"[^>]*>/gi, "");
 html = html.replaceAll("url(/_next/", "url(./_next/");
 html = html.replace("<head>", '<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/><meta http-equiv="Pragma" content="no-cache"/>');
+const interactionScript = String.raw`<script>
+(() => {
+  const toast = (message) => {
+    let node = document.querySelector('[data-mp-toast]');
+    if (!node) {
+      node = document.createElement('div');
+      node.dataset.mpToast = 'true';
+      Object.assign(node.style, { position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: '50', padding: '10px 14px', border: '1px solid #3b82f6', borderRadius: '8px', background: '#0b1220', color: '#dbeafe', font: '12px ui-monospace, SFMono-Regular, Menlo, monospace', boxShadow: '0 8px 30px #0008' });
+      document.body.appendChild(node);
+    }
+    node.textContent = message;
+    clearTimeout(node._timer);
+    node._timer = setTimeout(() => node.remove(), 2200);
+  };
+  const buttons = [...document.querySelectorAll('button')];
+  const buttonByText = (text) => buttons.find((button) => button.textContent.trim() === text);
+  const search = document.querySelector('input[placeholder="Search assets"]');
+  const assets = [...document.querySelectorAll('.asset-row')];
+  search?.addEventListener('input', (event) => {
+    const query = event.target.value.toLowerCase();
+    assets.forEach((asset) => { asset.hidden = query && !asset.textContent.toLowerCase().includes(query); });
+  });
+  assets.forEach((asset) => asset.addEventListener('click', () => {
+    assets.forEach((item) => item.classList.remove('selected'));
+    asset.classList.add('selected');
+    const ticker = asset.querySelector('strong')?.textContent.trim() ?? 'asset';
+    const name = asset.querySelector('small')?.textContent.trim() ?? '';
+    const heading = document.querySelector('h1');
+    if (heading) heading.textContent = ticker + ' ' + name;
+    toast('已切换至 ' + ticker);
+  }));
+  ['Overview', 'Signals', 'Discussion', 'News flow', '24H', '7D', '30D'].forEach((label) => {
+    const button = buttonByText(label);
+    button?.addEventListener('click', () => {
+      const group = ['Overview', 'Signals', 'Discussion', 'News flow'].includes(label) ? ['Overview', 'Signals', 'Discussion', 'News flow'] : ['24H', '7D', '30D'];
+      group.forEach((item) => buttonByText(item)?.classList.remove('active'));
+      button.classList.add('active');
+      toast(label + ' window selected');
+    });
+  });
+  const watch = buttonByText('☆ Watch');
+  watch?.addEventListener('click', () => { watch.textContent = watch.textContent.includes('Watched') ? '☆ Watch' : '★ Watched'; toast(watch.textContent.includes('Watched') ? '已加入自选' : '已移出自选'); });
+  buttonByText('Share ↗')?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); toast('链接已复制'); } catch { toast('当前浏览器不允许复制链接'); } });
+  buttonByText('Open settings')?.addEventListener('click', () => toast('Settings panel · demo mode'));
+  buttonByText('Add asset')?.addEventListener('click', () => toast('Add asset · demo mode'));
+  buttonByText('View all ↗')?.addEventListener('click', () => toast('Signal stream expanded · demo mode'));
+})();
+</script>`;
+html = html.replace('</body>', `${interactionScript}</body>`);
 // Keep the app under a fresh path so browsers holding the previous broken
 // index.html cannot keep resolving its stale absolute /_next URLs.
 await writeFile(`${versionedDir}/index.html`, html);
