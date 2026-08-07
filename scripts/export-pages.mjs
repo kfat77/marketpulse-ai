@@ -43,21 +43,31 @@ const interactionScript = String.raw`<script>
   };
   const buttons = [...document.querySelectorAll('button')];
   const buttonByText = (text) => buttons.find((button) => button.textContent.trim() === text);
-  const search = document.querySelector('input[placeholder="Search assets"]');
-  const assets = [...document.querySelectorAll('.asset-row')];
+  const search = document.querySelector('input[placeholder="Search assets"], input[placeholder="搜索资产"]');
+  const assets = [...document.querySelectorAll('.asset-row, .watch-row')];
   search?.addEventListener('input', (event) => {
     const query = event.target.value.toLowerCase();
     assets.forEach((asset) => { asset.hidden = query && !asset.textContent.toLowerCase().includes(query); });
   });
   assets.forEach((asset) => asset.addEventListener('click', () => {
-    assets.forEach((item) => item.classList.remove('selected'));
-    asset.classList.add('selected');
+    assets.forEach((item) => item.classList.remove('selected', 'active'));
+    asset.classList.add(asset.classList.contains('watch-row') ? 'active' : 'selected');
     const ticker = asset.querySelector('strong')?.textContent.trim() ?? 'asset';
     const name = asset.querySelector('small')?.textContent.trim() ?? '';
     const heading = document.querySelector('h1');
     if (heading) heading.textContent = ticker + ' ' + name;
     toast('已切换至 ' + ticker);
   }));
+  document.querySelectorAll('.module-tabs button').forEach((button) => button.addEventListener('click', () => {
+    document.querySelectorAll('.module-tabs button').forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+    toast('已切换至 ' + button.textContent.trim());
+  }));
+  document.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+  }));
+  document.querySelectorAll('.news-item').forEach((button) => button.addEventListener('click', () => toast('已选中新闻')));
   ['Overview', 'Signals', 'Discussion', 'News flow', '24H', '7D', '30D'].forEach((label) => {
     const button = buttonByText(label);
     button?.addEventListener('click', () => {
@@ -67,9 +77,9 @@ const interactionScript = String.raw`<script>
       toast(label + ' window selected');
     });
   });
-  const watch = buttonByText('☆ Watch');
-  watch?.addEventListener('click', () => { watch.textContent = watch.textContent.includes('Watched') ? '☆ Watch' : '★ Watched'; toast(watch.textContent.includes('Watched') ? '已加入自选' : '已移出自选'); });
-  buttonByText('Share ↗')?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); toast('链接已复制'); } catch { toast('当前浏览器不允许复制链接'); } });
+  const watch = buttons.find((button) => /☆ Watch|☆ 关注|★ Saved|★ 已关注/.test(button.textContent));
+  watch?.addEventListener('click', () => { watch.textContent = /关注|Watch/.test(watch.textContent) && !/已关注|Saved|Watched/.test(watch.textContent) ? '★ 已关注' : '☆ 关注'; toast(watch.textContent.includes('已关注') ? '已加入自选' : '已移出自选'); });
+  buttons.find((button) => /Share|分享/.test(button.textContent))?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); toast('链接已复制'); } catch { toast('当前浏览器不允许复制链接'); } });
   buttonByText('Open settings')?.addEventListener('click', () => toast('Settings panel · demo mode'));
   buttonByText('Add asset')?.addEventListener('click', () => toast('Add asset · demo mode'));
   buttonByText('View all ↗')?.addEventListener('click', () => toast('Signal stream expanded · demo mode'));
@@ -77,8 +87,8 @@ const interactionScript = String.raw`<script>
   lynchButton?.addEventListener('click', async () => {
     lynchButton.disabled = true;
     lynchButton.textContent = '正在分析新闻…';
-    let result = document.querySelector('.lynch-result');
-    if (!result) { result = document.createElement('pre'); result.className = 'lynch-result'; lynchButton.parentElement?.appendChild(result); }
+    let result = document.querySelector('.agent-result, .lynch-result');
+    if (!result) { result = document.createElement('pre'); result.className = 'agent-result'; lynchButton.parentElement?.appendChild(result); }
     const heading = document.querySelector('h1')?.textContent.trim() ?? '当前资产';
     try {
       if (location.hostname.endsWith('github.io') && !window.MP_LYNCH_API_BASE) throw new Error('static-pages');
@@ -166,11 +176,11 @@ const interactionScript = String.raw`<script>
     'DATA SOURCES Market data · RSS · Reddit': '数据来源 行情 · RSS · Reddit',
   };
   const reverseTranslations = Object.fromEntries(Object.entries(translations).map(([en, zh]) => [zh, en]));
-  const languageButton = document.createElement('button');
-  languageButton.className = 'icon-button';
+  const languageButton = document.querySelector('.language-button') || document.createElement('button');
+  languageButton.className = 'language-button';
   languageButton.type = 'button';
   languageButton.setAttribute('aria-label', '切换语言');
-  document.querySelector('.topbar')?.append(languageButton);
+  if (!languageButton.parentElement) document.querySelector('.topbar, .terminal-bar')?.append(languageButton);
   const translatePage = (toChinese) => {
     const dictionary = toChinese ? translations : reverseTranslations;
     document.documentElement.lang = toChinese ? 'zh-CN' : 'en';
