@@ -17,6 +17,15 @@ html = html.replaceAll('="/', '="./').replaceAll("='/", "='./");
 // strings are not HTML attributes, so rewrite them separately for Pages.
 html = html.replaceAll('"/_next/', '"./_next/').replaceAll("'/_next/", "'./_next/");
 html = html.replaceAll('"/favicon.svg', '"./favicon.svg').replaceAll("'/favicon.svg", "'./favicon.svg");
+// GitHub Pages serves this project below /marketpulse-ai/. Vinext's client
+// runtime assumes a domain-root /_next path and breaks there, while the
+// server-rendered dashboard is already complete and needs no hydration for
+// the public showcase. Keep the rendered UI and styles, but remove runtime
+// module loading that would request assets from kfat77.github.io/_next.
+html = html.replaceAll(/<script[\s\S]*?<\/script>/gi, "");
+html = html.replaceAll(/<link[^>]+rel="modulepreload"[^>]*>/gi, "");
+html = html.replaceAll(/<link[^>]+rel="preload"[^>]*>/gi, "");
+html = html.replaceAll("url(/_next/", "url(./_next/");
 html = html.replace("<head>", '<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/><meta http-equiv="Pragma" content="no-cache"/>');
 // Keep the app under a fresh path so browsers holding the previous broken
 // index.html cannot keep resolving its stale absolute /_next URLs.
