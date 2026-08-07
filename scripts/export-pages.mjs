@@ -73,6 +73,99 @@ const interactionScript = String.raw`<script>
   buttonByText('Open settings')?.addEventListener('click', () => toast('Settings panel · demo mode'));
   buttonByText('Add asset')?.addEventListener('click', () => toast('Add asset · demo mode'));
   buttonByText('View all ↗')?.addEventListener('click', () => toast('Signal stream expanded · demo mode'));
+
+  const translations = {
+    'LIVE DEMO DATA REFRESHED 2M AGO': '实时演示 · 2 分钟前更新',
+    WATCHLIST: '自选列表',
+    'US EQUITIES 4': '美股 4',
+    'MARKET PULSE 3': '市场脉搏 3',
+    'AI infrastructure': 'AI 基础设施',
+    'Hotspot · 92': '热点 · 92',
+    'Crypto majors': '主流加密资产',
+    'Building · 74': '升温 · 74',
+    'EV / mobility': '电动车 / 出行',
+    'Cooling · 48': '降温 · 48',
+    'Signal desk': '信号工作台',
+    'ASSET INTELLIGENCE / NASDAQ': '资产情报 / 纳斯达克',
+    '☆ Watch': '☆ 关注',
+    '★ Watched': '★ 已关注',
+    'Share ↗': '分享 ↗',
+    Overview: '概览',
+    Signals: '信号',
+    Discussion: '讨论',
+    'News flow': '新闻流',
+    WINDOW: '窗口',
+    'RETAIL FOMO RADAR / EXPERIMENTAL': '散户 FOMO 雷达 / 实验性',
+    'DEMO DATA': '演示数据',
+    'SOCIAL PLATFORM HEAT': '社交平台热度',
+    'LIVE DEMO': '实时演示',
+    RANK: '排名',
+    ASSET: '资产',
+    MENTIONS: '提及量',
+    '24H GROWTH': '24 小时增长',
+    SENTIMENT: '情绪',
+    'PRICE ACTION': '价格行为',
+    'price attention': '价格与关注度',
+    Trend: '趋势',
+    Bullish: '看涨',
+    Volume: '成交量',
+    Abnormal: '异常',
+    Updated: '更新时间',
+    'SHORT-TERM MARKET SCORE': '短线市场评分',
+    'Signal composite': '综合信号',
+    'Momentum trade': '动量交易',
+    'Price action': '价格行为',
+    'Capital flow': '资金流',
+    'Social sentiment': '社交情绪',
+    Attention: '关注度',
+    'RETAIL FOMO INDEX': '散户 FOMO 指数',
+    'Attention is accelerating': '关注度正在加速',
+    'ICE COLD': '冰点',
+    NORMAL: '正常',
+    'HEATING UP': '升温',
+    'FOMO ZONE': 'FOMO 区域',
+    'DISCUSSION GROWTH': '讨论增长',
+    'SENTIMENT ACCELERATION': '情绪加速度',
+    'VOLUME ANOMALY': '成交异常',
+    'RISK RADAR': '风险雷达',
+    'What could change?': '什么可能改变行情？',
+    HIGH: '高',
+    MED: '中',
+    LOW: '低',
+    'SIGNAL STREAM': '信号流',
+    'Latest market intelligence': '最新市场情报',
+    'View all ↗': '查看全部 ↗',
+    'ABOUT THE SCORE': '评分说明',
+    'Evidence over prediction.': '证据优先于预测。',
+    Transparent: '透明',
+    Timestamped: '带时间戳',
+    'Source-aware': '来源可追溯',
+    'Educational research tool · Not investment advice': '教育研究工具 · 不构成投资建议',
+    'DATA SOURCES Market data · RSS · Reddit': '数据来源 行情 · RSS · Reddit',
+  };
+  const reverseTranslations = Object.fromEntries(Object.entries(translations).map(([en, zh]) => [zh, en]));
+  const languageButton = document.createElement('button');
+  languageButton.className = 'icon-button';
+  languageButton.type = 'button';
+  languageButton.setAttribute('aria-label', '切换语言');
+  document.querySelector('.topbar')?.append(languageButton);
+  const translatePage = (toChinese) => {
+    const dictionary = toChinese ? translations : reverseTranslations;
+    document.documentElement.lang = toChinese ? 'zh-CN' : 'en';
+    document.querySelectorAll('body *').forEach((element) => {
+      if (element.children.length === 0) {
+        const key = element.textContent.trim();
+        if (dictionary[key]) element.textContent = dictionary[key];
+      }
+    });
+    const input = document.querySelector('input[placeholder]');
+    if (input) input.placeholder = toChinese ? '搜索资产' : 'Search assets';
+    document.title = toChinese ? 'MarketPulse AI — 市场情报，不是预测' : 'MarketPulse AI — Market intelligence, not prediction';
+    languageButton.textContent = toChinese ? 'EN' : '中文';
+  };
+  let chineseMode = true;
+  languageButton.addEventListener('click', () => { chineseMode = !chineseMode; translatePage(chineseMode); toast(chineseMode ? '已切换为中文' : 'Switched to English'); });
+  translatePage(chineseMode);
 })();
 </script>`;
 html = html.replace('</body>', `${interactionScript}</body>`);
