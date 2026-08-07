@@ -81,6 +81,7 @@ const interactionScript = String.raw`<script>
     if (!result) { result = document.createElement('pre'); result.className = 'lynch-result'; lynchButton.parentElement?.appendChild(result); }
     const heading = document.querySelector('h1')?.textContent.trim() ?? '当前资产';
     try {
+      if (location.hostname.endsWith('github.io') && !window.MP_LYNCH_API_BASE) throw new Error('static-pages');
       const response = await fetch((window.MP_LYNCH_API_BASE || location.origin) + '/api/lynch-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: heading.split(' ')[0], name: heading.slice(heading.indexOf(' ') + 1), news: [{ time: '08:42', title: 'NVIDIA discussion velocity hits 30-day high', source: 'Reddit · r/stocks' }, { time: '08:18', title: 'Retail attention broadens beyond mega-cap AI', source: 'MarketPulse RSS' }, { time: '07:56', title: 'Tesla sentiment splits as delivery debate returns', source: 'Stocktwits proxy' }] }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '分析服务暂不可用');
