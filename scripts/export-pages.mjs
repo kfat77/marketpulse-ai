@@ -85,7 +85,13 @@ const interactionScript = String.raw`<script>
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '分析服务暂不可用');
       result.textContent = data.analysis || '未返回分析内容';
-    } catch (error) { result.textContent = '分析服务暂不可用：' + (error.message || '请配置服务端 DEEPSEEK_API_KEY'); }
+    } catch (error) {
+      try {
+        const cached = await fetch('./lynch-analysis.json');
+        const data = await cached.json();
+        result.textContent = data.analysis + '\n\n（本次为部署时生成的 DeepSeek 分析）';
+      } catch { result.textContent = '分析服务暂不可用：' + (error.message || '请配置服务端 DEEPSEEK_API_KEY'); }
+    }
     finally { lynchButton.disabled = false; lynchButton.textContent = '分析当前资产新闻'; }
   });
 
@@ -191,6 +197,7 @@ await cp("dist/client/_next", `${outputDir}/_next`, { recursive: true });
 await cp("dist/client/favicon.svg", `${outputDir}/favicon.svg`);
 await cp("dist/client/_next", `${versionedDir}/_next`, { recursive: true });
 await cp("dist/client/favicon.svg", `${versionedDir}/favicon.svg`);
+await cp("public/lynch-analysis.json", `${versionedDir}/lynch-analysis.json`);
 
 await writeFile(
   `${outputDir}/index.html`,
