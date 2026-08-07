@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./mom.css";
 
 type Tone = "up" | "down" | "watch";
@@ -35,6 +35,19 @@ const socialHot = [
 ] as const;
 
 function toneClass(tone: Tone) { return tone === "up" ? "up" : tone === "down" ? "down" : "watch"; }
+function getUsMarketState(date: Date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(date).map(({ type, value }) => [type, value]));
+  const dateKey = `${parts.year}-${parts.month}-${parts.day}`;
+  const holidays = new Set(["2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03", "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07", "2026-11-26", "2026-12-25"]);
+  const weekday = !["Sat", "Sun"].includes(parts.weekday) && !holidays.has(dateKey);
+  const minutes = Number(parts.hour) * 60 + Number(parts.minute);
+  const time = `${parts.hour}:${parts.minute} ET`;
+  if (!weekday) return { label: "休市", time };
+  if (minutes >= 570 && minutes < 960) return { label: "美股盘中", time };
+  if (minutes >= 240 && minutes < 570) return { label: "美股盘前", time };
+  if (minutes >= 960 && minutes < 1200) return { label: "美股盘后", time };
+  return { label: "美股已收盘", time };
+}
 
 export default function Home() {
   const [activeSymbol, setActiveSymbol] = useState("NVDA");
@@ -46,8 +59,11 @@ export default function Home() {
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentResult, setAgentResult] = useState("");
   const [toast, setToast] = useState("");
+  const [clockNow, setClockNow] = useState(() => new Date());
   const active = assets.find((asset) => asset.symbol === activeSymbol) ?? assets[0];
   const filtered = useMemo(() => assets.filter((asset) => `${asset.symbol} ${asset.name}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  const marketClock = getUsMarketState(clockNow);
+  useEffect(() => { const timer = window.setInterval(() => setClockNow(new Date()), 30000); return () => window.clearInterval(timer); }, []);
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2200); };
   const runAgent = async () => {
@@ -64,8 +80,8 @@ export default function Home() {
   return <main className="research-shell">
     <header className="terminal-bar">
       <div className="wordmark"><span className="wordmark-mark">MP</span><span>MARKET<span className="accent">PULSE</span></span><span className="terminal-tag">RESEARCH</span></div>
-      <div className="global-search"><span>⌕</span><input aria-label="全局搜索" placeholder="搜索资产、主题或新闻" /></div>
-      <div className="session-meta"><span className="market-open" /> 美股盘中 <i /> 2026-08-07 09:42 ET <button className="language-button" onClick={() => notify("中文研究界面已启用")}>中文 / EN</button></div>
+      <div className="global-search"><span>⌕</span><input aria-label="全局搜索" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索资产、主题或新闻" /></div>
+      <div className="session-meta"><span className={`market-open ${marketClock.label === "美股盘中" ? "is-open" : ""}`} /> {marketClock.label} <i /> {marketClock.time} <button className="language-button" onClick={() => notify("中文研究界面已启用")}>中文 / EN</button></div>
     </header>
 
     <div className="terminal-layout">
@@ -74,7 +90,7 @@ export default function Home() {
         {[["总览", "⌂"], ["资产监控", "▦"], ["舆情雷达", "◎"], ["新闻 Agent", "◇"], ["研究方法", "≡"]].map(([label, icon]) => <button key={label} className={`nav-item ${view === label ? "active" : ""}`} onClick={() => { setView(label); notify(`已切换至 ${label}`); }}><span>{icon}</span>{label}</button>)}
         <div className="nav-divider" />
         <div className="nav-caption">自选资产 <b>{assets.length}</b></div>
-        <div className="watchlist-compact">{assets.map((asset) => <button key={asset.symbol} className={`watch-row ${asset.symbol === active.symbol ? "active" : ""}`} onClick={() => { setActiveSymbol(asset.symbol); notify(`已切换至 ${asset.symbol}`); }}><i className={`status-dot ${toneClass(asset.tone)}`} /><span><strong>{asset.symbol}</strong><small>{asset.name}</small></span><em className={toneClass(asset.tone)}>{asset.change}</em></button>)}</div>
+        <div className="watchlist-compact">{filtered.length ? filtered.map((asset) => <button key={asset.symbol} className={`watch-row ${asset.symbol === active.symbol ? "active" : ""}`} onClick={() => { setActiveSymbol(asset.symbol); notify(`已切换至 ${asset.symbol}`); }}><i className={`status-dot ${toneClass(asset.tone)}`} /><span><strong>{asset.symbol}</strong><small>{asset.name}</small></span><em className={toneClass(asset.tone)}>{asset.change}</em></button>) : <div className="empty-watchlist">没有匹配资产</div>}</div>
         <div className="nav-foot"><span className="analyst-avatar">MP</span><span><strong>MarketPulse AI</strong><small>研究模式 · 演示数据</small></span></div>
       </aside>
 
