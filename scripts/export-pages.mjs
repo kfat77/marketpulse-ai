@@ -15,6 +15,7 @@ html = html.replaceAll('="/', '="./').replaceAll("='/", "='./");
 // strings are not HTML attributes, so rewrite them separately for Pages.
 html = html.replaceAll('"/_next/', '"./_next/').replaceAll("'/_next/", "'./_next/");
 html = html.replaceAll('"/favicon.svg', '"./favicon.svg').replaceAll("'/favicon.svg", "'./favicon.svg");
+html = html.replace("<head>", '<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/><meta http-equiv="Pragma" content="no-cache"/>');
 await writeFile(`${outputDir}/index.html`, html);
 await cp("dist/client/_next", `${outputDir}/_next`, { recursive: true });
 await cp("dist/client/favicon.svg", `${outputDir}/favicon.svg`);
